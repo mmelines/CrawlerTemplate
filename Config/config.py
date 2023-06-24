@@ -1,6 +1,7 @@
-from sources import CrawlSources as config
-from sources import DatabaseConfig as dbConfig
+from Config.sources import CrawlSources as config
+from Config.sources import DatabaseConfig as dbConfig
 from urllib.parse import urlparse as parse
+import psycopg2
 
 class CrawlConfig(config):
 
@@ -25,7 +26,8 @@ class Database(dbConfig):
           @ self.port
         """
         super().__init__()
-        self.uri = "postgres://{0}:{1}@{2}:{3}/{4}".format("user", "pwd", "host", "port", "dbname")
+        self.uri = "postgres://{0}:{1}@{2}:{3}/{4}".format(self.user, self.password, self.host, self.dbname, self.port)
+        self.cursor = None
 
     def __repr__(self):
         msg = "Database() configuration: \n"
@@ -38,5 +40,37 @@ class Database(dbConfig):
         print(msg)
         return msg
 
+    def openConnection(self):
+        conn = psycopg2.connect()
+        self.cursor = conn.cursor()
+        print("opened cursor: " + str(self.cursor))
+        return True
+        try:
+            conn = psycopg2.connect()
+            self.cursor = conn.cursor()
+            print("opened cursor: " + str(self.cursor))
+            return True
+        except:
+            print("Cursor could not be opened")
+        finally:
+            return False
+
+    def closeConnection(self):
+        result = False
+        if self.cursor == None:
+            print("self.cursor is none")
+        try:
+            self.cursor.close()
+            self.cursor = None
+            result = True
+            print("Cursor was closed")
+        except AttributeError as e:
+            print("Cursor could not be closed " + str(e))
+        finally:
+            return result
+            
+
 if __name__ == '__main__':
-    Database().__repr__()
+    db = Database()
+    db.openConnection()
+    db.closeConnection()
